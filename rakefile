@@ -1,0 +1,18 @@
+$LOAD_PATH << File.expand_path( '../lib', __FILE__ )
+
+desc 'executes all tests'
+task :tests do
+    require 'minitest/unit'
+    require File.expand_path('../tests', __FILE__ )
+    require 'minitest/autorun'
+end
+
+desc 'build the rdoc documentation'
+task :doc do
+    puts %x'rdoc --main ./lib/kiel.rb --exclude tests.rb'
+end
+
+desc 'build the gem'
+task :gem do
+    puts %x'gem build kiel.gemspec'
+end
