@@ -1,0 +1,1 @@
+# here is the layout of the base image defined
