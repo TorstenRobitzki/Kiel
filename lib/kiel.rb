@@ -1,4 +1,5 @@
 require 'rake'
+require 'kiel/scm/git'
 
 # Kiel tries to make the task to create cloud images easier by braking the whole installation into smaller, reproducible tasks.
 # Each step is versioned by a version control system like git or subversion. Each installation step is described by a file
@@ -16,16 +17,15 @@ module Kiel
     #--
     RECOGNIZED_STEP_OPTIONS = [ :name, :task, :scm_name, :setup_name ]
     DEFAULT_OPTIONS = {}
-    RECOGNIZED_OPTIONS = [ :scm, :cloud, :setup, :base_image ]
+    RECOGNIZED_OPTIONS = [ :scm, :cloud, :setup, :base_image, :root_dir ]
      
     class Implementation
         def initialize defaults
             @defaults = defaults.dup
-            @defaults.freeze
         end
         
         def scm
-            @defaults[ :scm ]
+            @defaults[ :scm ] ||= SCM::Git.new
         end
         
         def cloud
@@ -33,9 +33,14 @@ module Kiel
         end
         
         def setup
-            @defaults[ :setup ]
+            @defaults[ :setup ] 
         end 
     
+        def expand_path file_name
+            @defaults[ :root_dir ] ||= Dir.pwd
+            File.expand_path file_name, @defaults[ :root_dir ]
+        end
+        
         def initial_image_id step, base_steps, tags
             return { :id => @defaults[ :basic_image_id ] } if base_steps.empty?
             
@@ -53,14 +58,17 @@ module Kiel
                     tags.each{ | key, value | puts "\'#{key}\' => \'#{value}\'" }                    
                 else
                     instance = cloud.start_instance initial_image_id( step, steps, tags )
-                    setup.execute step[ :setup_name ] 
+                    setup.execute expand_path( step[ :setup_name ] ) 
                     cloud.store_image instance, tags
                 end                     
             end
         end
         
         def add_versions steps
-            steps.collect() { | step | step.merge( version: scm.version( step[ :scm_name ] ) ) }
+            steps.collect() do | step | 
+                name = step[ :scm_name ] == '*' ? '*' : expand_path( step[ :scm_name ] )
+                step.merge( version: scm.version( name ) ) 
+            end
         end
 
         private :setup, :cloud, :scm, :initial_image_id
@@ -155,6 +163,8 @@ module Kiel
     # :base_image:: A cloud image id that is used as base for the very first step. This is the right most argument in 
     #               the list of +steps+.
     # 
+    # :root_dir:: Root directory, where all file names are bassed on. If the options is not given, the current directory is used
+    #
     # Example:
     #    Kiel::image [ 'application', 'base' ], setup: Kiel::Setup::Capistrano.new, base_image: 'ami-6d555119'
     #
