@@ -15,7 +15,7 @@ require 'kiel/scm/git'
 
 module Kiel
     #--
-    RECOGNIZED_STEP_OPTIONS = [ :name, :task, :scm_name, :setup_name ]
+    RECOGNIZED_STEP_OPTIONS = [ :name, :task, :scm_name, :setup_name, :description ]
     DEFAULT_OPTIONS = {}
     RECOGNIZED_OPTIONS = [ :scm, :cloud, :setup, :base_image, :root_dir ]
      
@@ -48,7 +48,7 @@ module Kiel
         end
     
         def create_task step, steps
-            Rake::Task::define_task( step[ :task ] => steps.collect{ | s | s[ :task ] } ) do | task, arguments |
+            task = Rake::Task::define_task( step[ :task ] => steps.collect{ | s | s[ :task ] } ) do | task, arguments |
                 tags = steps.inject( { 'image_type' => step[ :name ].to_s, step[ :name ].to_s => step[ :version ].to_s } ) do | t, s |
                     t.merge s[ :name ].to_s => s[ :version ].to_s
                 end
@@ -58,10 +58,19 @@ module Kiel
                     tags.each{ | key, value | puts "\'#{key}\' => \'#{value}\'" }                    
                 else
                     instance = cloud.start_instance initial_image_id( step, steps, tags )
-                    setup.execute expand_path( step[ :setup_name ] ) 
-                    cloud.store_image instance, tags
+                    
+                    begin
+                        setup.execute expand_path( step[ :setup_name ] ) 
+                        cloud.store_image instance, tags
+                    rescue
+                        cloud.stop_instance instance
+                        raise
+                    end                     
                 end                     
             end
+
+            task.add_description( step[ :description ] ) if step.key? :description
+            task
         end
         
         def add_versions steps
@@ -201,6 +210,10 @@ module Kiel
         @@defaults.merge! defs
     end
      
+    def self.reset_defaults
+        @@defaults = nil
+    end
+            
     # returns the global defaults that are applied to every call to Kiel::image
     def self.defaults
         @@defaults ||= DEFAULT_OPTIONS.dup

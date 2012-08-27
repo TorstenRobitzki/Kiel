@@ -12,16 +12,17 @@ class Tests < MiniTest::Unit::TestCase
     # Mocks for excess to the cloud provider and an interface to setup a started cloud computer   
     def setup
         Kiel::set_defaults \
-            scm: Kiel::SCM::Mock.new( 'application.rb' => '1', 'middle_ware.rb' => '2', 'base_image.rb' => '3', '*' => '1' ), 
+            scm: Kiel::SCM::Mock.new( '/application.rb' => '1', '/middle_ware.rb' => '2', '/base_image.rb' => '3', '*' => '1' ), 
             cloud: Kiel::Cloud::Mock.new( { id: 'image_provided_by_cloud_provider', tags: {} }  ), 
             setup: Kiel::Setup::Mock.new,
-            base_image: 'image_provided_by_cloud_provider'
+            base_image: 'image_provided_by_cloud_provider', root_dir: '/'
             
         @INITIAL_IMAGES = 1            
     end
     
     def teardown
         Rake::Task::clear
+        Kiel::reset_defaults
     end
     
     def test_setting_defaults_will_result_in_only_the_given_defaults_changed
@@ -52,7 +53,7 @@ class Tests < MiniTest::Unit::TestCase
         Kiel::image [ :application, :middle_ware, :base_image ]
 
         Rake::Task[ :application ].invoke  
-        assert_equal Kiel::defaults[ :setup ].executed_steps, [ 'base_image.rb', 'middle_ware.rb', 'application.rb' ]  
+        assert_equal Kiel::defaults[ :setup ].executed_steps, [ '/base_image.rb', '/middle_ware.rb', '/application.rb' ]  
     end
     
     def test_results_in_three_images
@@ -95,7 +96,7 @@ class Tests < MiniTest::Unit::TestCase
         Rake::Task[ :application ].invoke
 
         Kiel::set_defaults \
-            scm: Kiel::SCM::Mock.new( 'application.rb' => '1', 'middle_ware.rb' => '4', 'base_image.rb' => '3', '*' => '1' ) 
+            scm: Kiel::SCM::Mock.new( '/application.rb' => '1', '/middle_ware.rb' => '4', '/base_image.rb' => '3', '*' => '1' ) 
         
         Rake::Task::clear
         Kiel::image [ :application, :middle_ware, :base_image ]
@@ -129,7 +130,7 @@ class Tests < MiniTest::Unit::TestCase
     
     def test_the_version_of_the_first_element_is_by_default_determined_by_the_whole_repository
         Kiel::set_defaults \
-            scm: Kiel::SCM::Mock.new( 'application.rb' => '1', 'middle_ware.rb' => '2', 'base_image.rb' => '3', '*' => '99' )
+            scm: Kiel::SCM::Mock.new( '/application.rb' => '1', '/middle_ware.rb' => '2', '/base_image.rb' => '3', '*' => '99' )
 
         Kiel::image [ :application, :middle_ware, :base_image ]
         Rake::Task[ :application ].invoke
@@ -137,7 +138,7 @@ class Tests < MiniTest::Unit::TestCase
         assert cloud.exists? 'image_type' => 'application', 'application' => '99', 'middle_ware' => '2', 'base_image' => '3'
 
         Kiel::set_defaults \
-            scm: Kiel::SCM::Mock.new( 'application.rb' => '1', 'middle_ware.rb' => '2', 'base_image.rb' => '3', '*' => '42' ) 
+            scm: Kiel::SCM::Mock.new( '/application.rb' => '1', '/middle_ware.rb' => '2', '/base_image.rb' => '3', '*' => '42' ) 
         
         Rake::Task::clear
         Kiel::image [ :application, :middle_ware, :base_image ]
@@ -148,9 +149,9 @@ class Tests < MiniTest::Unit::TestCase
     
     def test_the_version_of_the_first_element_is_not_determined_by_the_whole_repository_if_given
         Kiel::set_defaults \
-            scm: Kiel::SCM::Mock.new( 'application.rb' => '19', 'middle_ware.rb' => '2', 'base_image.rb' => '3', '*' => '99' )
+            scm: Kiel::SCM::Mock.new( '/application.rb' => '19', '/middle_ware.rb' => '2', '/base_image.rb' => '3', '*' => '99' )
 
-        Kiel::image [ { name: :application, scm_name: 'application.rb' }, :middle_ware, :base_image ]
+        Kiel::image [ { name: :application, scm_name: '/application.rb' }, :middle_ware, :base_image ]
         Rake::Task[ :application ].invoke
         
         assert cloud.exists? 'image_type' => 'application', 'application' => '19', 'middle_ware' => '2', 'base_image' => '3'
@@ -166,7 +167,7 @@ class Tests < MiniTest::Unit::TestCase
     
     def test_options_passed_to_image_are_used
         Kiel::image [ :application, :middle_ware, :base_image ],
-            :scm => Kiel::SCM::Mock.new( 'application.rb' => '1', 'middle_ware.rb' => '2', 'base_image.rb' => '3', '*' => '42' )
+            :scm => Kiel::SCM::Mock.new( '/application.rb' => '1', '/middle_ware.rb' => '2', '/base_image.rb' => '3', '*' => '42' )
         Rake::Task[ :application ].invoke
     
         # as now the :scm instance passed to the call to image was used, the version stored in the tag must be 42, not 1
@@ -179,15 +180,23 @@ class Tests < MiniTest::Unit::TestCase
             { :name => 'app', :task => :application, :scm_name => 'deployment.rb' },
             { :name => :middle_ware, :setup_name => 'install_middle_ware.perl' },
             :base ],
-       :scm => Kiel::SCM::Mock.new( 'deployment.rb' => '1', 'middle_ware.rb' => '2', 'base.rb' => '3' )
+       :scm => Kiel::SCM::Mock.new( '/deployment.rb' => '1', '/middle_ware.rb' => '2', '/base.rb' => '3' )
 
         Rake::Task[ :application ].invoke
         
-        assert_equal [ 'base.rb', 'install_middle_ware.perl', 'deployment.rb' ], Kiel::defaults[ :setup ].executed_steps 
+        assert_equal [ '/base.rb', '/install_middle_ware.perl', '/deployment.rb' ], Kiel::defaults[ :setup ].executed_steps 
     end
     
     def test_unrecognized_options_are_detected 
         assert_raises( ArgumentError ) { Kiel::image [ :application, :middle_ware, :base_image ], foobar: 1 } 
+    end
+    
+    def test_description
+        Kiel::image( [ { name: :application, description: 'foobar' }, :base_image ] )
+    
+        assert_equal 'foobar', Rake::Task[ :application ].comment
+        assert Rake::Task[ :base_image ]
+        refute Rake::Task[ :base_image ].comment
     end
 end
 
@@ -219,5 +228,67 @@ class SCMMockTest < MiniTest::Unit::TestCase
     
     def test_mock_with_raise_if_version_is_not_given
         assert_raises( RuntimeError ) { @scm.version 'foobar' } 
+    end
+end
+
+
+class SCMGitTest < MiniTest::Unit::TestCase
+    FILE_VERSIONS = [ 'da8cbc111aced3e2370fa060da0f7cde29bc1af3', 'bda861d3b27f7977f54165a2bdd0c43453b3a971', 'bd3b715449f9cd1f2c4c0ea70a3257d682cea959']
+
+    def setup
+        @git = Kiel::SCM::Git.new
+    end
+       
+    def teardown
+        Rake::Task::clear
+        Kiel::reset_defaults
+    end
+             
+    def test_ask_for_the_version_of_a_single_file
+        assert_equal FILE_VERSIONS[ 0 ], @git.version( 'fixtures/root/application.rb' )
+        assert_equal FILE_VERSIONS[ 1 ], @git.version( 'fixtures/root/middle_ware.rb' )
+        assert_equal FILE_VERSIONS[ 2 ], @git.version( 'fixtures/root/base.rb' )
+    end
+    
+    def test_ask_for_the_head_version
+        refute FILE_VERSIONS.include? @git.version( '*' )
+    end
+    
+    def test_ask_for_a_list_of_files
+        a_b = @git.version( [ 'fixtures/root/application.rb','fixtures/root/middle_ware.rb' ] )
+        b_a = @git.version( [ 'fixtures/root/middle_ware.rb','fixtures/root/base.rb' ] )
+        a_c = @git.version( [ 'fixtures/root/application.rb','fixtures/root/base.rb' ] )
+        
+        refute_equal a_b, b_a
+        refute_equal a_b, a_c
+        refute_equal b_a, a_c
+        
+        refute FILE_VERSIONS.include? a_b
+        refute FILE_VERSIONS.include? b_a
+        refute FILE_VERSIONS.include? a_c
+    end
+
+    def test_if_multiple_files_are_given_the_order_should_not_matter
+        assert_equal @git.version( [ 'fixtures/root/application.rb','fixtures/root/middle_ware.rb' ] ),
+            @git.version( [ 'fixtures/root/middle_ware.rb', 'fixtures/root/application.rb' ] )
+    end
+    
+    def test_git_is_the_default
+        Kiel::set_defaults \
+            cloud: Kiel::Cloud::Mock.new( { id: 'image_provided_by_cloud_provider', tags: {} }  ), 
+            setup: Kiel::Setup::Mock.new,
+            base_image: 'image_provided_by_cloud_provider', root_dir: File.expand_path( '../fixtures/root', __FILE__ )
+
+        Kiel::image [ :application, :middle_ware, :base ]  
+        Rake::Task[ :application ].invoke
+
+        cloud = Kiel::defaults[ :cloud ]
+        repo_version = @git.version '*'
+        
+        assert cloud.exists? 'image_type' => 'application', 
+            'application' => repo_version, 'middle_ware' => FILE_VERSIONS[ 1 ], 'base' => FILE_VERSIONS[ 2 ]
+        assert cloud.exists? 'image_type' => 'middle_ware', 
+            'middle_ware' => FILE_VERSIONS[ 1 ], 'base' => FILE_VERSIONS[ 2 ] 
+        assert cloud.exists? 'image_type' => 'base', 'base' => FILE_VERSIONS[ 2 ]       
     end
 end
