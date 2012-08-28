@@ -1,6 +1,7 @@
 #--
 require 'kiel'
 require 'kiel/scm/mock'
+require 'kiel/scm/git'
 require 'kiel/cloud/mock'
 require 'kiel/setup/mock'
 require 'rake'
@@ -292,3 +293,4 @@ class SCMGitTest < MiniTest::Unit::TestCase
         assert cloud.exists? 'image_type' => 'base', 'base' => FILE_VERSIONS[ 2 ]       
     end
 end
+

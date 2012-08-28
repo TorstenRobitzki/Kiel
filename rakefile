@@ -7,6 +7,21 @@ task :tests do
     require 'minitest/autorun'
 end
 
+desc 'execute the AWS tests ( AWS Account required )'
+task :aws_tests do
+    
+    if File.exist? File.expand_path('../aws.yml', __FILE__ )
+        require 'minitest/unit'
+        require File.expand_path('../aws_tests', __FILE__ )
+        require 'minitest/autorun'
+    else
+        puts <<-EOM
+    To run the AWS tests, you need an AWS account, fill your account informations into 'aws_template.yml' and 
+    rename that file to 'aws.yml'
+EOM
+    end                    
+end
+
 desc 'build the rdoc documentation'
 task :doc do
     puts %x'rdoc --main ./lib/kiel.rb --exclude tests.rb'

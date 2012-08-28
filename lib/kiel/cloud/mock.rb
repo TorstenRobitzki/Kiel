@@ -52,10 +52,6 @@ module Kiel
                 @images.detect { | image | image[ :tags ] == tags }
             end
 
-            # starts the image with the given tags
-            def start_image tags
-            end
-                                     
             #--
             def calls
                 @calls

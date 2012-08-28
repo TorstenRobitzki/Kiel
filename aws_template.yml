@@ -1,0 +1,7 @@
+!ruby/symbol credentials: 
+    !ruby/symbol access_key_id: "your key id"
+    !ruby/symbol secret_access_key: "your access key" 
+!ruby/symbol region: "eu-west-1"
+!ruby/symbol start_options: 
+    !ruby/symbol key_name: "your key name"
+    !ruby/symbol security_groups: [ "your access group containing access to ssh (if needed)" ]

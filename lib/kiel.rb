@@ -1,5 +1,6 @@
 require 'rake'
 require 'kiel/scm/git'
+require 'kiel/cloud/aws'
 
 # Kiel tries to make the task to create cloud images easier by braking the whole installation into smaller, reproducible tasks.
 # Each step is versioned by a version control system like git or subversion. Each installation step is described by a file
@@ -24,12 +25,13 @@ module Kiel
             @defaults = defaults.dup
         end
         
+        # this getters defer the construction of expensive devices to the latest moment possible
         def scm
             @defaults[ :scm ] ||= SCM::Git.new
         end
         
         def cloud
-            @defaults[ :cloud ]
+            @defaults[ :cloud ] ||= Cloud::AWS.new
         end
         
         def setup
@@ -41,27 +43,44 @@ module Kiel
             File.expand_path file_name, @defaults[ :root_dir ]
         end
         
-        def initial_image_id step, base_steps, tags
-            return { :id => @defaults[ :basic_image_id ] } if base_steps.empty?
-            
-            { :tags => tags } 
+        def build_tags step, steps
+            steps.inject( { 'image_type' => step[ :name ].to_s, step[ :name ].to_s => step[ :version ].to_s } ) do | t, s |
+                 t.merge s[ :name ].to_s => s[ :version ].to_s
+            end
+        end
+        
+        def initial_image_id step, base_steps
+            if base_steps.empty?
+                unless @defaults.key? :base_image
+                    raise ArgumentError, "no :base_image given. Need to know what the base image of the very first image to produce should be"
+                end     
+                { :id => @defaults[ :base_image ] }
+            else         
+                step, *steps = *base_steps        
+                { :tags => build_tags( step, steps ) }
+            end     
         end
     
         def create_task step, steps
             task = Rake::Task::define_task( step[ :task ] => steps.collect{ | s | s[ :task ] } ) do | task, arguments |
-                tags = steps.inject( { 'image_type' => step[ :name ].to_s, step[ :name ].to_s => step[ :version ].to_s } ) do | t, s |
-                    t.merge s[ :name ].to_s => s[ :version ].to_s
-                end
+                tags = build_tags step, steps
 
                 if cloud.exists? tags
                     puts "image \'#{step[ :name ]}\' already up to date and exists:"
                     tags.each{ | key, value | puts "\'#{key}\' => \'#{value}\'" }                    
                 else
-                    instance = cloud.start_instance initial_image_id( step, steps, tags )
-                    
+                    puts "starting instance for: \'#{step[ :name ]}\'"
+                    instance = cloud.start_instance initial_image_id( step, steps )
+                    puts "instance for: \'#{step[ :name ]}\' started."
+
                     begin
+                        puts "excuting installation for: \'#{step[ :name ]}\'"
                         setup.execute expand_path( step[ :setup_name ] ) 
+                        puts "installation for: \'#{step[ :name ]}\' done."
+
+                        puts "storing image for: \'#{step[ :name ]}\'"
                         cloud.store_image instance, tags
+                        puts "image for: \'#{step[ :name ]}\' stored"
                     rescue
                         cloud.stop_instance instance
                         raise
@@ -80,7 +99,7 @@ module Kiel
             end
         end
 
-        private :setup, :cloud, :scm, :initial_image_id
+        private :setup, :cloud, :scm, :initial_image_id, :build_tags
     end
     
     # checks that all keys in options are valid
