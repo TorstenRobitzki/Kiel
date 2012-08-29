@@ -52,6 +52,11 @@ module Kiel
                 @images.detect { | image | image[ :tags ] == tags }
             end
 
+            # returns the dns name from an instance
+            def dns_name instance
+                "#{instance}"
+            end
+            
             #--
             def calls
                 @calls

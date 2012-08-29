@@ -4,9 +4,11 @@ require 'kiel/scm/mock'
 require 'kiel/scm/git'
 require 'kiel/cloud/mock'
 require 'kiel/setup/mock'
+require 'kiel/setup/capistrano'
 require 'rake'
+require 'yaml'
 
-
+=begin
 class Tests < MiniTest::Unit::TestCase
 
     # Mock for the source code management containing three elements having the versions 1, 2 and 3.
@@ -293,4 +295,23 @@ class SCMGitTest < MiniTest::Unit::TestCase
         assert cloud.exists? 'image_type' => 'base', 'base' => FILE_VERSIONS[ 2 ]       
     end
 end
+=end
+class SetupCapistranoTest < MiniTest::Unit::TestCase
+    def setup
+        teardown
+        @capo = Kiel::Setup::Capistrano.new
+    end
 
+    def teardown
+        begin; File.delete( File.expand_path( '../fixtures/capo_out.yml', __FILE__ ) ); rescue; end
+    end
+
+    # check to see that the script got executed                 
+    def test_run_capo_script
+        step = { setup_name: File.expand_path( '../fixtures/capo_script.rb', __FILE__ ), tags: { a:1, b:2 } }
+        @capo.execute step, 'localhost'
+        result = YAML.load_file File.expand_path( '../fixtures/capo_out.yml', __FILE__ )
+        
+        assert_equal result, { tags: { a:1, b:2 } }
+    end
+end

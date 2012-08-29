@@ -35,12 +35,17 @@ module Kiel
         end
         
         def setup
-            @defaults[ :setup ] 
+            @defaults[ :setup ] ||= Setup::Capistrano.new
         end 
     
         def expand_path file_name
             @defaults[ :root_dir ] ||= Dir.pwd
-            File.expand_path file_name, @defaults[ :root_dir ]
+            
+            if file_name.kind_of? Array 
+                file_name.collect { |f| File.expand_path f, @defaults[ :root_dir ] }
+            else                
+                File.expand_path file_name, @defaults[ :root_dir ]
+            end
         end
         
         def build_tags step, steps
@@ -74,8 +79,11 @@ module Kiel
                     puts "instance for: \'#{step[ :name ]}\' started."
 
                     begin
+                        dns_name    = cloud.dns_name instance
+                        expand_step = step.dup.merge( setup_name: expand_path( step[ :setup_name ] ) )
+
                         puts "excuting installation for: \'#{step[ :name ]}\'"
-                        setup.execute expand_path( step[ :setup_name ] ) 
+                        setup.execute expand_step, dns_name  
                         puts "installation for: \'#{step[ :name ]}\' done."
 
                         puts "storing image for: \'#{step[ :name ]}\'"

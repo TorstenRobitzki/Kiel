@@ -116,6 +116,7 @@ module Kiel
                     image = @ec2.images.create( 
                         :instance_id => instance.id,
                         :no_reboot => true,
+                        :description => "automaticaly created #{tags[ 'image_type' ]} image",
                         :name => tags[ 'image_type' ] )
                        
                     wait_for_image image
@@ -123,8 +124,6 @@ module Kiel
                     tags.each do | key, value |
                         image.add_tag( key, :value => value )
                     end               
-                    
-                    image.add_tag( 'name', :value => tags[ 'image_type' ] )        
                 ensure
                     stop_instance instance
                 end
@@ -143,6 +142,10 @@ module Kiel
                 raise ArgumentError, "AWS.exists? with empty tags" if tags.empty?
                 
                 image_by_tags tags 
+            end
+            
+            def dns_name instance
+                instance.dns_name
             end
             
             # deletes the given image
