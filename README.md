@@ -14,24 +14,24 @@ Installation
 
 To install Kiel, download the source, cd into the source directory and use
 
->   rake gem
->   gem install kiel
+    rake gem
+    gem install kiel
 
 to install the gem. Use `gem doc` to build the html documentation, use `gem tests` to run the tests.
 
 Example
 -------
 
->    Kiel::image [
->            { name: :application, description: 'build the application image' },
->            { name: :base_image, description: 'build the base image' },
->            :sioux, :boost, :ruby,
->            { name: :basics, scm_name: [ 'basics.rb', 'rakefile' ], setup_name: 'basics.rb' }
->        ],
->        { 
->            base_image: 'ami-6d555119', 
->            cloud: aws
->        }
+    Kiel::image [
+            { name: :application, description: 'build the application image' },
+            { name: :base_image, description: 'build the base image' },
+            :sioux, :boost, :ruby,
+            { name: :basics, scm_name: [ 'basics.rb', 'rakefile' ], setup_name: 'basics.rb' }
+        ],
+        { 
+            base_image: 'ami-6d555119', 
+            cloud: aws
+        }
 
 creates 6 rake tasks, named application, base_image, sioux, boost, ruby and basics. Every task depends on all other
 task following that task in the list of task. When starting the task `boost` for example, Kiel will determine the 
