@@ -18,4 +18,4 @@ to install the gem. Use `gem doc` to build the html documentation, use `gem test
 Licence
 -------
 
-Kiel is licenced unter MIT licence.
+Kiel is licenced under MIT licence.
