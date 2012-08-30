@@ -1,3 +1,5 @@
+require 'digest/sha1'
+
 module Kiel
     module Cloud
         INSTANCE_STARTUP_TIMEOUT    = 120
@@ -113,11 +115,16 @@ module Kiel
             # store the given +instance+ and add the hash of +tags+ to the image. 
             def store_image instance, tags
                 begin
+                
+                    puts "waiting 2 minutes before starting to take the image..."
+                    sleep 120
+                    puts "creating images..."
+    
                     image = @ec2.images.create( 
                         :instance_id => instance.id,
                         :no_reboot => true,
                         :description => "automaticaly created #{tags[ 'image_type' ]} image",
-                        :name => tags[ 'image_type' ] )
+                        :name => "#{tags[ 'image_type' ]} #{Digest::SHA1.hexdigest tags.inspect}" )
                        
                     wait_for_image image
     
