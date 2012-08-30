@@ -9,8 +9,10 @@ Installation
 ------------
 
 To install Kiel, download the source, change in the source directory and use
+
 >   rake gem
 >   gem install kiel
+
 to install the gem. Use `gem doc` to build the html documentation, use `gem tests` to run the tests.
 
 Licence
