@@ -307,7 +307,7 @@ class SetupCapistranoTest < MiniTest::Unit::TestCase
 
     # check to see that the script got executed                 
     def test_run_capo_script
-        step = { setup_name: File.expand_path( '../fixtures/capo_script.rb', __FILE__ ), tags: { a:1, b:2 } }
+        step = { setup_name: File.expand_path( '../fixtures/capo_script.rb', __FILE__ ), tags: { a:1, b:2 }, name: 'install' }
         @capo.execute step, 'localhost'
         result = YAML.load_file File.expand_path( '../fixtures/capo_out.yml', __FILE__ )
         
