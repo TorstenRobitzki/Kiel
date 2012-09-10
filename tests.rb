@@ -8,7 +8,6 @@ require 'kiel/setup/capistrano'
 require 'rake'
 require 'yaml'
 
-=begin
 class Tests < MiniTest::Unit::TestCase
 
     # Mock for the source code management containing three elements having the versions 1, 2 and 3.
@@ -295,7 +294,7 @@ class SCMGitTest < MiniTest::Unit::TestCase
         assert cloud.exists? 'image_type' => 'base', 'base' => FILE_VERSIONS[ 2 ]       
     end
 end
-=end
+
 class SetupCapistranoTest < MiniTest::Unit::TestCase
     def setup
         teardown
