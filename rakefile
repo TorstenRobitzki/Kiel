@@ -31,3 +31,5 @@ desc 'build the gem'
 task :gem do
     puts %x'gem build kiel.gemspec'
 end
+
+task :default => :tests
