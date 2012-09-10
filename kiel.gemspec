@@ -1,6 +1,6 @@
 Gem::Specification.new do | gem |
     gem.name     = 'kiel'
-    gem.version  = '0.1'
+    gem.version  = '0.2'
     gem.date     = Date.today.to_s
     
     gem.summary  = 'Building cloud images step by step'
