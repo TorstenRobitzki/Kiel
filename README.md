@@ -13,7 +13,11 @@ Every AMI created by a task is tagged with all git versions of the scripts invol
 Installation
 ------------
 
-To install Kiel, download the source, cd into the source directory and use
+To install Kiel:
+
+    gem install kiel
+
+To install the lattest version of Kiel from source, download the source, cd into the source directory and use
 
     rake gem
     gem install kiel
