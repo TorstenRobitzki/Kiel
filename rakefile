@@ -1,6 +1,6 @@
 $LOAD_PATH << File.expand_path( '../lib', __FILE__ )
 
-desc 'executes all tests'
+desc 'executes all tests, that are independent from any cloud accounts'
 task :tests do
     require 'minitest/unit'
     require File.expand_path('../tests', __FILE__ )

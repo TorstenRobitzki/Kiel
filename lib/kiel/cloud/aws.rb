@@ -155,8 +155,9 @@ module Kiel
                 instance.dns_name
             end
             
-            # deletes the given image
-            def delete_image image_name
+            # deletes the given images by tags. For now this function is used just for cleanup during tests.
+            def delete_image tags
+                all_images_by_tags( tags ).each { | image | image.deregister } 
             end
         end
     end
