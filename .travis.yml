@@ -4,3 +4,4 @@ rvm:
   - 1.9.2
   - ruby-head
   - jruby-head
+bundler_args: --without aws_account_required
