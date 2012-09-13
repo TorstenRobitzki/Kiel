@@ -12,6 +12,8 @@ require 'kiel/cloud/aws'
 # If one step fails, all subsequent installation steps might fail too. But when one step succeeds, that step can be
 # used as base for all subsequence steps. 
 #
+# Currently there are two different ways to access the AWS API: RightAWS and the aws-sdk gem.
+#
 # License::   Distributes under the MIT license
 
 module Kiel

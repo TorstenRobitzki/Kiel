@@ -2,11 +2,14 @@
 require 'kiel'
 require 'kiel/scm/mock'
 require 'kiel/cloud/aws'
+require 'kiel/cloud/right_aws'
 require 'kiel/setup/mock'
 require 'rake'
 require 'yaml'
 
-class CloudAWSTests < MiniTest::Unit::TestCase
+EXISTING_BASE_IMAGE_NAME = 'ami-6d555119'
+
+module Tests
 
     IMAGE_TAGS = [ 
         { 'image_type' => 'application', 'application' => '4', 'middle_ware' => '2', 'base' => '3' }, 
@@ -17,11 +20,6 @@ class CloudAWSTests < MiniTest::Unit::TestCase
         IMAGE_TAGS.each { | tags | @cloud.delete_image tags }
     end    
         
-    def setup
-        @cloud = Kiel::Cloud::AWS.new( YAML.load_file( 'aws.yml' ) )
-        delete_all_images    
-    end
-    
     def teardown
         delete_all_images    
     end
@@ -37,7 +35,7 @@ class CloudAWSTests < MiniTest::Unit::TestCase
             cloud: @cloud
             
         Kiel::image [ :application, :middle_ware, :base ], 
-            base_image: 'ami-6d555119', root_dir: File.expand_path( '../fixtures/root', __FILE__ )
+            base_image: EXISTING_BASE_IMAGE_NAME, root_dir: File.expand_path( '../fixtures/root', __FILE__ )
 
         Rake::Task[ :application ].invoke
         
@@ -47,9 +45,51 @@ class CloudAWSTests < MiniTest::Unit::TestCase
     end
     
 end
+
+=begin
+class AWSTests < MiniTest::Unit::TestCase
+    include Tests
+
+    def setup
+        @cloud = Kiel::Cloud::AWS.new( YAML.load_file( 'aws.yml' ) )
+        delete_all_images    
+    end
+end    
  
-class CloudAWSOptionsTests < MiniTest::Unit::TestCase
+class AWSOptionsTests < MiniTest::Unit::TestCase
     def test_that_unrecognized_options 
        assert_raises( ArgumentError ) { Kiel::Cloud::AWS.new( foo: :bar ) } 
     end
 end
+=end
+
+class RightAWSTests < MiniTest::Unit::TestCase
+    include Tests
+
+    def setup
+        @cloud = Kiel::Cloud::RightAWS.new( YAML.load_file( 'aws.yml' ) )
+    end
+    
+    def test_start_stop_server
+        skip 'very basic tests that is covered by test_create_three_images too'       
+        instance = @cloud.start_instance( { :id => EXISTING_BASE_IMAGE_NAME } )
+        assert instance
+        
+        identifiying_tags = { 'a' => '1', 'b' => '2' }
+        @cloud.store_image instance, identifiying_tags
+        assert @cloud.exists? identifiying_tags 
+
+        @cloud.delete_image identifiying_tags 
+        refute @cloud.exists? identifiying_tags 
+
+        @cloud.stop_instance instance
+    end
+end
+
+class RightAWSOptionsTests < MiniTest::Unit::TestCase
+    def test_no_credentionals_no_cookies
+        assert_raises( ArgumentError ) { Kiel::Cloud::RightAWS.new() }
+    end
+end
+ 
+ 
