@@ -14,6 +14,8 @@ require 'kiel/cloud/aws'
 #
 # Currently there are two different ways to access the AWS API: RightAWS and the aws-sdk gem.
 #
+# For an introduction in german please visit http://robitzki.de/blog/Continuous_Deployment_Part_1
+#
 # License::   Distributes under the MIT license
 
 module Kiel
@@ -33,7 +35,16 @@ module Kiel
         end
         
         def cloud
-            @defaults[ :cloud ] ||= Cloud::AWS.new
+            @cloud = @cloud || begin
+                default = @defaults[ :cloud ] 
+                if default.nil?
+                    Cloud::AWS.new
+                else
+                    default.respond_to?( :call ) ? default.call() : default         
+                end                                
+            end
+            
+            @cloud
         end
         
         def setup
@@ -196,7 +207,16 @@ module Kiel
     #          be an instance of +Kiel::Setup::Capistrano+.
     # 
     # :cloud:: An instance of the cloud provider to lookup images and to access cloud instances. By default this will
-    #          be an instance of +Kiel::Cloud::AWS+
+    #          be an instance of +Kiel::Cloud::AWS+. If the given object respond_to?( :call ), the construction can be
+    #          further deferred until the first time, a call to AWS is issued.
+    #
+    # Example:
+    #    Kiel::image [ 'a', 'b', 'c' ], cloud: Kiel::Cloud::RightAWS.new( credentials: secrets )
+    #    Kiel::image [ 'a', 'b', 'c' ], cloud: lambda{ Kiel::Cloud::RightAWS.new credentials: secrets }
+    #
+    # The first version constructs the cloud provider before calling the image(), the second version just passes a
+    # lambda that will defer the construction until the cloud provider is actual needed. The later version is especial
+    # useful in rakefiles.
     # 
     # :base_image:: A cloud image id that is used as base for the very first step. This is the right most argument in 
     #               the list of +steps+.

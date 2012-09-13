@@ -9,6 +9,8 @@ require 'yaml'
 
 EXISTING_BASE_IMAGE_NAME = 'ami-6d555119'
 
+# expects @cloud to be a cloud provider or something to be called that will provide a provider
+# expects cloud() to return a cloud provider
 module Tests
 
     IMAGE_TAGS = [ 
@@ -17,7 +19,7 @@ module Tests
         { 'image_type' => 'base', 'base' => '3' } ]
         
     def delete_all_images
-        IMAGE_TAGS.each { | tags | @cloud.delete_image tags }
+        IMAGE_TAGS.each { | tags | cloud.delete_image tags }
     end    
         
     def teardown
@@ -40,19 +42,22 @@ module Tests
         Rake::Task[ :application ].invoke
         
         IMAGE_TAGS.each do | tags | 
-            assert @cloud.exists?( tags ), "missing #{tags.inspect}" 
+            assert cloud.exists?( tags ), "missing #{tags.inspect}" 
         end
     end
     
 end
-
-=begin
+=begin # AWS and RightAWS together causes Internal Errors on the AWS side
 class AWSTests < MiniTest::Unit::TestCase
     include Tests
 
     def setup
         @cloud = Kiel::Cloud::AWS.new( YAML.load_file( 'aws.yml' ) )
         delete_all_images    
+    end
+    
+    def cloud
+        @cloud 
     end
 end    
  
@@ -62,27 +67,31 @@ class AWSOptionsTests < MiniTest::Unit::TestCase
     end
 end
 =end
-
 class RightAWSTests < MiniTest::Unit::TestCase
     include Tests
 
+    # the second time, the test(s) in Tests are performed, the deferred cloud connection construction is used
     def setup
-        @cloud = Kiel::Cloud::RightAWS.new( YAML.load_file( 'aws.yml' ) )
+        @cloud = lambda{ Kiel::Cloud::RightAWS.new( YAML.load_file( 'aws.yml' ) ) }
+    end
+    
+    def cloud
+        @the_cloud ||= @cloud.call
     end
     
     def test_start_stop_server
         skip 'very basic tests that is covered by test_create_three_images too'       
-        instance = @cloud.start_instance( { :id => EXISTING_BASE_IMAGE_NAME } )
+        instance = cloud.start_instance( { :id => EXISTING_BASE_IMAGE_NAME } )
         assert instance
         
         identifiying_tags = { 'a' => '1', 'b' => '2' }
-        @cloud.store_image instance, identifiying_tags
-        assert @cloud.exists? identifiying_tags 
+        cloud.store_image instance, identifiying_tags
+        assert cloud.exists? identifiying_tags 
 
-        @cloud.delete_image identifiying_tags 
-        refute @cloud.exists? identifiying_tags 
+        cloud.delete_image identifiying_tags 
+        refute cloud.exists? identifiying_tags 
 
-        @cloud.stop_instance instance
+        cloud.stop_instance instance
     end
 end
 
