@@ -38,6 +38,18 @@ class Tests < MiniTest::Unit::TestCase
     def cloud
         Kiel::defaults[ :cloud ]
     end
+
+    def test_tags_are_passed_to_the_setup
+        Kiel::image [ :application, :middle_ware, :base_image ]
+        Rake::Task[ :application ].invoke
+        
+        step = Kiel::defaults[ :setup ].last_step_data
+        assert step
+        assert step.key? :tags
+        assert_equal( { 'image_type' => 'application', 'application' => '1', 'middle_ware' => '2', 'base_image' => '3' },
+            step[ :tags ] )
+    end 
+    
     
     # make sure, that tasks are defined and that they depend on each other in the correct order
     def test_simple_image_definition 

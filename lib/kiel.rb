@@ -94,7 +94,8 @@ module Kiel
                     begin
                         dns_name    = cloud.dns_name instance
                         expand_step = step.dup.merge( setup_name: expand_path( step[ :setup_name ] ) )
-
+                        expand_step[ :tags ] = tags 
+                        
                         puts "excuting installation for: \'#{step[ :name ]}\'"
                         setup.execute expand_step, dns_name  
                         puts "installation for: \'#{step[ :name ]}\' done."
