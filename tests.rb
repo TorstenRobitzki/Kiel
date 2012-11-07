@@ -191,10 +191,10 @@ class Tests < MiniTest::Unit::TestCase
     
     def test_the_correct_setup_scripts_are_called
         Kiel::image [ 
-            { :name => 'app', :task => :application, :scm_name => 'deployment.rb' },
-            { :name => :middle_ware, :setup_name => 'install_middle_ware.perl' },
-            :base ],
-       :scm => Kiel::SCM::Mock.new( '/deployment.rb' => '1', '/middle_ware.rb' => '2', '/base.rb' => '3' )
+                { :name => 'app', :task => :application, :scm_name => 'deployment.rb' },
+                { :name => :middle_ware, :setup_name => 'install_middle_ware.perl' },
+                :base ],
+            :scm => Kiel::SCM::Mock.new( '/deployment.rb' => '1', '/middle_ware.rb' => '2', '/base.rb' => '3' )
 
         Rake::Task[ :application ].invoke
         
@@ -211,6 +211,16 @@ class Tests < MiniTest::Unit::TestCase
         assert_equal 'foobar', Rake::Task[ :application ].comment
         assert Rake::Task[ :base_image ]
         refute Rake::Task[ :base_image ].comment
+    end
+    
+    def test_if_scm_names_is_an_array_setup_name_defaults_to_the_first_name
+        Kiel::set_defaults scm: Kiel::SCM::Mock.new(  '["/base.rb", "/deployment.rb"]' => '3', '*' => '1' )
+
+        Kiel::image [ { name: :foobar, scm_name: ['base.rb', 'deployment.rb'] }]
+
+        assert Rake::Task[ :foobar ]
+        Rake::Task[ :foobar ].invoke
+        assert_equal [ '/base.rb' ], Kiel::defaults[ :setup ].executed_steps 
     end
 end
 

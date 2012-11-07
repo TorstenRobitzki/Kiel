@@ -24,7 +24,7 @@ module Kiel
     DEFAULT_OPTIONS = {}
     RECOGNIZED_OPTIONS = [ :scm, :cloud, :setup, :base_image, :root_dir ]
      
-    class Implementation
+    class Implementation # :nodoc: all
         def initialize defaults
             @defaults = defaults.dup
         end
@@ -51,6 +51,7 @@ module Kiel
             @defaults[ :setup ] ||= Setup::Capistrano.new
         end 
     
+        # fully expands the given file_name or array of file names
         def expand_path file_name
             @defaults[ :root_dir ] ||= Dir.pwd
             
@@ -78,7 +79,9 @@ module Kiel
                 { :tags => build_tags( step, steps ) }
             end     
         end
-    
+
+        # this function creates the rake task, by first checking if the image already exists and then starting the 
+        # base image and running the setup step    
         def create_task step, steps
             task = Rake::Task::define_task( step[ :task ] => steps.collect{ | s | s[ :task ] } ) do | task, arguments |
                 tags = build_tags step, steps
@@ -131,6 +134,10 @@ module Kiel
         }
     end
     
+    def self.default_setup_name step
+        step[ :scm_name ] == '*' ? "#{step[ :name ]}.rb" : [ step[ :scm_name  ] ].flatten.first  
+    end 
+    
     def self.expand_steps steps
         raise ArgumentError, "no steps given" if steps.empty?
         
@@ -162,7 +169,7 @@ module Kiel
             }.merge step
         end.collect do | step |
             {
-                :setup_name => step[ :scm_name ] == '*' ? "#{step[ :name ]}.rb" : step[ :scm_name  ] 
+                :setup_name => default_setup_name( step )
             }.merge step
         end
         
@@ -187,9 +194,15 @@ module Kiel
     # :scm_name:: The name that is passed to the source code management to determine the version of the description
     #             of the step. If not given, +name+ is expanded to +name.rb+ in the current directory. For the first
     #             element this defaults to '*', which is a special notation for the latest version of the repository.
+    #
+    #             It's possible for :scm_name to be an array of file names. This results in an execution of the step,
+    #             when every any of the listed file changed.  
     # 
     # :setup_name:: The name of the script to be executed. This defaults to :scm_name if given and not '*' or to 
-    #               :name + '.rb' 
+    #               :name + '.rb'. If :scm_name is an array, :setup_name defaults to the first element of the array.
+    #
+    #               So :scm_name => [ 'run_bundler.rb', 'Gemfile', 'Gemfile.lock' ] would default to execute 
+    #               'run_bundler.rb'
     #
     # :description:: Optional description for the task to be created.
     #
