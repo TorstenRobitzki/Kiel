@@ -70,8 +70,8 @@ module Kiel
                 image_state = 'pending'                              
                 while image_state == 'pending' do
                     begin 
-                        image_state = @ec2.describe_images_by_owner( 'self' ).detect{ | desc | desc[ :aws_id ] == image }
-                        image_state = image_state[ :aws_state ]
+                        image_desc = @ec2.describe_images_by_owner( 'self' ).detect{ | desc | desc[ :aws_id ] == image }
+                        image_state = image_desc[ :aws_state ] if image_desc
                     rescue => e
                         puts "err: #{e.inspect}"
                     end     
