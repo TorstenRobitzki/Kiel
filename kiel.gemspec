@@ -1,6 +1,6 @@
 Gem::Specification.new do | gem |
     gem.name     = 'kiel'
-    gem.version  = '0.5.3'
+    gem.version  = '0.5.4'
     gem.date     = Date.today.to_s
     
     gem.summary  = 'Building cloud images step by step'
@@ -15,7 +15,9 @@ EOD
     gem.email    = 'gemmaster@robitzki.de'
     gem.author   = 'Torsten Robitzki'
     
-    gem.add_dependency [ 'rake', 'aws-sdk', 'capistrano' ]
+    gem.add_dependency 'rake' 
+    gem.add_dependency 'aws-sdk'
+    gem.add_dependency 'capistrano'
     gem.licenses = ["MIT"]
     gem.files = Dir[ 'lib/**/*' ]
 end
