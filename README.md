@@ -2,7 +2,7 @@ Kiel
 ====
 Kiel automates the process of creating rake tasks to produce Amazon Machine Images (AMI). The basic idea behind Kiel
 is that an AMI can be best produced by installing software step by step on a defined base and by having all that 
-steps under source code control. On the way from a base image to the final AMI, produces a new AMI with every step. 
+steps under source code control. On the way from a base image to the final AMI, Kiel produces a new AMI with every step. 
 
 Every task is associated with a single ruby script that will be executed
 with Capistrano to setup a server started with the AMI produced by the previous task.  
