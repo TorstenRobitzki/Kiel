@@ -39,7 +39,7 @@ Example
         }
 
 creates 6 rake tasks, named application, base_image, sioux, boost, ruby and basics. Every task depends on all other
-task following that task in the list of task. When starting the task `boost` for example, Kiel will determine the 
+task following that task in the list of tasks. When starting the task `boost` for example, Kiel will determine the 
 git versions of boost.rb, ruby.rb and basics.rb. Then Kiel will connect Amazon to look up the tags added to the 
 AMIs for the 3 steps. If any of the AMIs tags do not fit with the git versions of the script, a new image will be
 created and tagged.
