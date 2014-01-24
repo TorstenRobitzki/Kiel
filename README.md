@@ -8,6 +8,7 @@ Every task is associated with a single ruby script that will be executed
 with Capistrano to setup a server started with the AMI produced by the previous task.  
 Every AMI created by a task is tagged with all git versions of the scripts involved in creating that AMI.
 
+[![Gem Version](https://badge.fury.io/rb/kiel.png)](http://badge.fury.io/rb/kiel)
 [![Build Status](https://secure.travis-ci.org/TorstenRobitzki/Kiel.png)](http://travis-ci.org/TorstenRobitzki/Kiel)
 
 Installation
